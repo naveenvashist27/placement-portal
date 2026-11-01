@@ -1,0 +1,390 @@
+@import "tailwindcss";
+
+/* IIPS navy, taken from the college logo. Overrides the indigo scale so every existing indigo-* class picks it up. */
+@theme {
+  --color-indigo-50: #eef1fb;
+  --color-indigo-100: #dde3f6;
+  --color-indigo-200: #bcc7ec;
+  --color-indigo-300: #93a4de;
+  --color-indigo-400: #5f76c8;
+  --color-indigo-500: #3a52ae;
+  --color-indigo-600: #27389a;
+  --color-indigo-700: #1e2c7d;
+  --color-indigo-800: #182364;
+  --color-indigo-900: #131b4f;
+  --color-indigo-950: #0c1235;
+  --color-gold: #d9a21b;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+}
+
+/* ---- Interactive feedback: pointer cursor + slow, smooth hover states ---- */
+button:not(:disabled),
+select:not(:disabled),
+summary,
+[role="button"],
+a[href],
+input[type="checkbox"],
+input[type="file"],
+label:has(input[type="checkbox"]) {
+  cursor: pointer;
+}
+
+button:disabled,
+select:disabled {
+  cursor: not-allowed;
+}
+
+button,
+a[href],
+select {
+  transition:
+    background-color 0.35s ease,
+    color 0.35s ease,
+    border-color 0.35s ease,
+    box-shadow 0.35s ease,
+    filter 0.35s ease,
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Filled buttons (any colour): brighten, lift and glow in their own colour. */
+button[class*="bg-"]:not(:disabled):hover {
+  filter: brightness(1.18) saturate(1.15);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px -6px rgb(39 56 154 / 0.55);
+}
+
+button[class*="bg-"]:not(:disabled):active {
+  transform: translateY(0) scale(0.97);
+  filter: brightness(0.95);
+  transition-duration: 0.1s;
+}
+
+/* Outline buttons: fill softly with the brand tint. */
+button[class*="border-"]:not([class*="bg-"]):not(:disabled):hover {
+  background-color: var(--color-indigo-50);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px -6px rgb(39 56 154 / 0.35);
+}
+
+/* Text-only buttons and links (Approve, Reject, Edit...): slight grow + darker shade. */
+button[class*="text-"]:not([class*="bg-"]):not([class*="border-"]):not(:disabled):hover,
+main a[class*="text-"]:not([class*="bg-"]):hover {
+  filter: brightness(0.75);
+  transform: scale(1.06);
+}
+
+/* Summary cards (and card links) grow on hover. Only on devices with a real pointer, so phones are untouched. */
+@media (hover: hover) and (pointer: fine) {
+  .hover-grow {
+    transition:
+      transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.45s ease,
+      border-color 0.35s ease;
+  }
+  .hover-grow:hover {
+    transform: scale(1.04);
+    box-shadow: 0 22px 40px -18px rgb(19 27 79 / 0.55);
+    position: relative;
+    z-index: 5;
+  }
+
+  /* Wide panels and list cards grow only a little, so they do not push into their neighbours. */
+  .hover-grow-soft {
+    transition:
+      transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.45s ease,
+      border-color 0.35s ease;
+  }
+  .hover-grow-soft:hover {
+    transform: scale(1.015);
+    box-shadow: 0 18px 34px -18px rgb(19 27 79 / 0.45);
+    position: relative;
+    z-index: 5;
+  }
+}
+
+/* Filled coloured buttons: the colour slides from the base shade to a lighter one on hover (slow, smooth). */
+button.bg-indigo-600,
+main a.bg-indigo-600,
+button.bg-red-600,
+button.bg-emerald-600,
+button.bg-slate-800 {
+  background-size: 260% 100%;
+  background-position: 0% 0;
+  transition:
+    background-position 0.7s ease,
+    background-color 0.35s ease,
+    color 0.35s ease,
+    border-color 0.35s ease,
+    box-shadow 0.35s ease,
+    filter 0.35s ease,
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+button.bg-indigo-600,
+main a.bg-indigo-600 {
+  background-image: linear-gradient(110deg, var(--color-indigo-600) 0%, var(--color-indigo-600) 38%, var(--color-indigo-400) 100%);
+}
+button.bg-red-600 {
+  background-image: linear-gradient(110deg, var(--color-red-600) 0%, var(--color-red-600) 38%, var(--color-red-400) 100%);
+}
+button.bg-emerald-600 {
+  background-image: linear-gradient(110deg, var(--color-emerald-600) 0%, var(--color-emerald-600) 38%, var(--color-emerald-400) 100%);
+}
+button.bg-slate-800 {
+  background-image: linear-gradient(110deg, var(--color-slate-800) 0%, var(--color-slate-800) 38%, var(--color-slate-500) 100%);
+}
+button.bg-indigo-600:not(:disabled):hover,
+main a.bg-indigo-600:hover,
+button.bg-red-600:not(:disabled):hover,
+button.bg-emerald-600:not(:disabled):hover,
+button.bg-slate-800:not(:disabled):hover {
+  background-position: 100% 0;
+}
+
+/* Links that look like buttons get the same lift as real buttons. */
+main a[class*="bg-"]:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.12);
+  box-shadow: 0 8px 18px -6px rgb(39 56 154 / 0.55);
+}
+
+/* Sidebar items slide a little. */
+aside nav a:hover {
+  transform: translateX(4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button,
+  a[href],
+  select {
+    transition: none;
+  }
+  button:hover,
+  a:hover {
+    transform: none !important;
+  }
+}
+
+/* ---- Animated heading: letters land in gold, then settle into the heading colour ---- */
+.typewriter-letter {
+  display: inline-block;
+  opacity: 0;
+  animation: letter-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes letter-in {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.8);
+    color: var(--color-gold);
+  }
+  45% {
+    opacity: 1;
+    transform: translateY(0) scale(1.15);
+    color: var(--color-gold);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+    color: inherit;
+  }
+}
+
+.typewriter-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: var(--color-gold);
+  opacity: 0;
+  animation: caret-blink 0.7s steps(1) 4 forwards;
+}
+
+@keyframes caret-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.fade-in-late {
+  opacity: 0;
+  animation: fade-in 0.8s ease 2.4s forwards;
+}
+
+@keyframes fade-in {
+  to {
+    opacity: 1;
+  }
+}
+
+/* Each page eases in when you navigate. */
+.page-enter {
+  animation: page-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.theme-toggle svg {
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.theme-toggle:hover svg {
+  transform: rotate(25deg) scale(1.15);
+}
+
+/* Reduced-motion (also switched on by Windows battery saver): no movement, but keep the gentle fade-in of the heading. */
+@keyframes letter-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typewriter-letter {
+    animation: letter-fade 0.4s ease forwards;
+  }
+  .fade-in-late {
+    animation: fade-in 0.8s ease 2.4s forwards;
+  }
+  .page-enter {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .typewriter-caret {
+    display: none;
+  }
+}
+
+/* ---- Dark mode: flip the colour scales so every existing class follows ---- */
+html.dark {
+  color-scheme: dark;
+  --color-slate-50: #0a1020;
+  --color-slate-100: #0c1426;
+  --color-slate-200: #223049;
+  --color-slate-300: #34456a;
+  --color-slate-400: #64748b;
+  --color-slate-500: #94a3b8;
+  --color-slate-600: #a9b6ca;
+  --color-slate-700: #c3cddb;
+  --color-slate-800: #e2e8f0;
+  --color-slate-900: #f1f5f9;
+  --color-slate-950: #f8fafc;
+  /* soft tints become dark tints, and their dark text becomes light */
+  --color-indigo-50: #182052;
+  --color-red-50: #3b1620;
+  --color-red-200: #7f2a38;
+  --color-red-700: #fca5a5;
+  --color-red-800: #fecaca;
+  --color-emerald-50: #0d2f26;
+  --color-emerald-300: #1f7a5e;
+  --color-emerald-700: #6ee7b7;
+  --color-amber-50: #3a2a0c;
+  --color-amber-700: #fcd34d;
+}
+
+/* The sidebar is dark in both modes, so it keeps the original light-mode values. */
+html.dark aside {
+  --color-slate-100: #f1f5f9;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-700: #334155;
+  --color-slate-800: #1e293b;
+}
+
+html.dark .text-indigo-900,
+html.dark .text-indigo-800 {
+  color: #c7d0f5;
+}
+html.dark .text-indigo-600,
+html.dark .text-indigo-700 {
+  color: #9fb0ee;
+}
+html.dark .text-red-600 {
+  color: #f87171;
+}
+html.dark .text-emerald-600 {
+  color: #34d399;
+}
+html.dark .text-amber-600 {
+  color: #fbbf24;
+}
+/* Filled buttons keep white text (the text-indigo-600 rule above must not reach them). */
+html.dark .bg-indigo-600,
+html.dark .bg-red-600,
+html.dark .bg-slate-800 {
+  color: #fff;
+}
+
+/* Cards and panels. Done per class (not by redefining white) so text-white / border-white stay white. */
+html.dark .bg-indigo-100 {
+  background-color: #222c66;
+}
+html.dark .bg-white:not(img) {
+  background-color: #111a2e;
+}
+html.dark .bg-slate-800:not(aside *) {
+  background-color: #334155;
+}
+/* Full-page gradients on the login / reset screens must stay dark in both modes. */
+html.dark .from-slate-900 {
+  --tw-gradient-from: #0b1220;
+}
+html.dark .to-slate-900 {
+  --tw-gradient-to: #0b1220;
+}
+
+html.dark :where(input, select, textarea) {
+  background-color: #0c1426;
+  color: var(--color-slate-900);
+}
+html.dark ::placeholder {
+  color: #64748b;
+}
+
+/* Plain `border` has no colour of its own; in dark mode give it a quiet one without beating border-* utilities. */
+@layer base {
+  html.dark * {
+    border-color: var(--color-slate-200);
+  }
+}
+
+html.dark .recharts-default-tooltip {
+  background-color: #111a2e !important;
+  border-color: #223049 !important;
+}
+html.dark .recharts-cartesian-grid line {
+  stroke: #223049;
+}
+html.dark .recharts-text {
+  fill: #94a3b8;
+}
+
+/* Smooth colour fade while switching theme. */
+html.theme-anim *,
+html.theme-anim *::before,
+html.theme-anim *::after {
+  transition:
+    background-color 0.4s ease,
+    color 0.4s ease,
+    border-color 0.4s ease !important;
+}
