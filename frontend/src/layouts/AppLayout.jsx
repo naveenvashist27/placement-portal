@@ -25,6 +25,7 @@ const studentNav = [
 const pcellNav = [
   ['Dashboard', '/admin'],
   ['Students', '/admin/students'],
+  ['Student Requests', '/admin/requests'],
   ['Companies', '/admin/companies'],
   ['Question Verification', '/admin/questions'],
   ['Experiences', '/admin/experiences'],

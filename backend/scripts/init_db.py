@@ -32,6 +32,10 @@ async def main() -> None:
         # create_all never alters existing tables, so add newer profile columns here.
         for column, sql_type in NEW_PROFILE_COLUMNS:
             await conn.execute(text(f"ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS {column} {sql_type}"))
+        await conn.execute(text("ALTER TABLE users ALTER COLUMN hashed_password DROP NOT NULL"))
+        await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS google_sub VARCHAR(64)"))
+        await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(512)"))
+        await conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_google_sub ON users (google_sub)"))
         await conn.execute(text("ALTER TABLE registration_forms ADD COLUMN IF NOT EXISTS eligibility_json TEXT"))
     print("Database tables created.")
 

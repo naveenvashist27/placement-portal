@@ -26,8 +26,12 @@ class Settings(BaseSettings):
     max_upload_size_mb: int = 5
     seed_demo_data: bool = True
 
-    # Student self-registration disabled until college email DB is available
-    allow_student_registration: bool = False
+    # Google OAuth client ID (Google Cloud Console > Credentials > OAuth client ID, type "Web application").
+    google_client_id: str | None = None
+
+    # Credentials used by `python -m scripts.create_tpo`. Change the password before deploying.
+    tpo_email: str = "tpo@iips.edu.in"
+    tpo_password: str = "Tpo@12345"
 
     # Campus-only access. Centre = IIPS DAVV map pin. Set GEOFENCE_ENABLED=false to work from outside campus.
     geofence_enabled: bool = True

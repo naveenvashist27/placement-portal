@@ -24,6 +24,7 @@ import AuditLogsPage from './pages/AuditLogsPage'
 import AdminEventsPage from './pages/AdminEventsPage'
 import PlacementsPage from './pages/PlacementsPage'
 import CampusGate from './components/CampusGate'
+import StudentRequestsPage from './pages/StudentRequestsPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 
@@ -55,6 +56,7 @@ export default function App() {
                 <Route element={<ProtectedRoute roles={['PCELL_MEMBER', 'TPO']} />}>
                   <Route path="admin" element={<AdminDashboard />} />
                   <Route path="admin/students" element={<StudentsPage />} />
+                  <Route path="admin/requests" element={<StudentRequestsPage />} />
                   <Route path="admin/companies" element={<CompaniesPage />} />
                   <Route path="admin/questions" element={<AdminQuestionReview />} />
                   <Route path="admin/experiences" element={<ExperiencesPage />} />

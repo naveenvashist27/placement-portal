@@ -50,25 +50,48 @@ Run commands from `backend/` with `PYTHONPATH=.` (default when using `python -m 
 ```bash
 cd frontend
 npm install
-echo VITE_API_BASE_URL=http://localhost:8000 > .env
+# create frontend/.env containing:
+#   VITE_API_BASE_URL=http://localhost:8000
+#   VITE_GOOGLE_CLIENT_ID=<your Google client ID>
 npm run dev
 ```
 
 Open http://localhost:5173
 
-## Demo accounts (after seed)
+## How people sign in
 
-Password for all: `Demo@12345`
+**Students (Google):** click "Continue with Google". The first time, they enter roll number, course and batch, which sends a
+request to the placement cell. A PCELL member or the TPO approves it under **Student Requests**. After that, the same Google
+sign-in goes straight into the portal. There is no separate sign-up.
+
+**TPO / PCELL (email + password):** use "TPO / PCELL staff login" on the login page.
+
+### TPO login (create it once)
+
+```bash
+cd backend
+python -m scripts.create_tpo                     # uses TPO_EMAIL / TPO_PASSWORD from .env
+python -m scripts.create_tpo me@iips.edu.in 'MyStrongPass1' "My Name"   # or pass your own
+```
+
+Defaults if you do not change `.env`: **`tpo@iips.edu.in` / `Tpo@12345`**. Run the same command again any time to reset the
+TPO password. Change the default password before deploying.
+
+### Google setup (one time)
+
+1. Google Cloud Console > APIs & Services > Credentials > Create OAuth client ID > **Web application**.
+2. Add `http://localhost:5173` (and your deployed frontend URL) under **Authorized JavaScript origins**.
+3. Put the client ID in the root `.env` as `GOOGLE_CLIENT_ID=...` and in `frontend/.env` as `VITE_GOOGLE_CLIENT_ID=...`.
+
+## Demo accounts (after seed, password `Demo@12345`)
 
 | Role | Email |
 |------|--------|
-| Student | `student@college.demo` |
+| Student | `student@college.demo` (password login only works for seeded accounts) |
 | PCELL | `pcell@college.demo` |
 | TPO | `tpo@college.demo` |
 
-## Student registration
-
-Student self-registration with college email is **disabled by default** (`ALLOW_STUDENT_REGISTRATION=false`) until your college identity source is connected. Login works with seeded demo users.
+Existing databases: run `python -m scripts.init_db` again to add the new `users` columns.
 
 ## Supabase (production)
 

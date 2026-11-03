@@ -28,12 +28,20 @@ export function AuthProvider({ children }) {
     return me.data
   }
 
+  // Used after Google sign-in, which hands back a ready-made access token.
+  const loginWithToken = async (accessToken) => {
+    localStorage.setItem('access_token', accessToken)
+    const me = await api.get('/api/auth/me')
+    setUser(me.data)
+    return me.data
+  }
+
   const logout = () => {
     localStorage.removeItem('access_token')
     setUser(null)
   }
 
-  const value = useMemo(() => ({ user, loading, login, logout }), [user, loading])
+  const value = useMemo(() => ({ user, loading, login, loginWithToken, logout }), [user, loading])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

@@ -6,6 +6,8 @@ export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([])
 
   const push = useCallback((message, type = 'info') => {
+    // API validation errors arrive as a list of objects; rendering one would crash the whole page.
+    if (typeof message !== 'string') message = message?.[0]?.msg || 'Something went wrong'
     const id = crypto.randomUUID()
     setToasts((t) => [...t, { id, message, type }])
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3500)

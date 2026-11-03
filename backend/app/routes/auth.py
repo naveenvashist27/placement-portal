@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.database import get_db
+from app.core.google import verify_google_credential
 from app.core.security import (
     create_access_token,
     create_password_reset_token,
@@ -21,8 +22,9 @@ from app.models.user import ApprovalRequest, PasswordResetToken, StudentProfile,
 from app.schemas.auth import (
     ChangePasswordRequest,
     ForgotPasswordRequest,
+    GoogleLoginRequest,
+    GoogleLoginResponse,
     LoginRequest,
-    RegisterRequest,
     ResetPasswordRequest,
     TokenResponse,
     UserPublic,
@@ -35,55 +37,70 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 @router.post("/login", response_model=TokenResponse)
 async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
+    """Email + password sign-in. Used by the TPO and PCELL staff; students sign in with Google."""
     result = await db.execute(select(User).where(User.email == body.email.lower()))
     user = result.scalar_one_or_none()
-    if not user or not verify_password(body.password, user.hashed_password):
+    if not user or not user.hashed_password or not verify_password(body.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
-    if user.role == UserRole.PCELL_MEMBER and user.status != UserStatus.ACTIVE:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="PCELL account pending approval or suspended")
-    if user.status in {UserStatus.SUSPENDED, UserStatus.REJECTED, UserStatus.INACTIVE}:
+    if user.status == UserStatus.PENDING:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is pending approval")
+    if user.status != UserStatus.ACTIVE:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is not active")
     token = create_access_token(str(user.id), {"role": user.role.value})
     return TokenResponse(access_token=token, role=user.role, full_name=user.full_name)
 
 
-@router.post("/register", response_model=Msg)
-async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
-    settings = get_settings()
-    email = body.email.lower()
+@router.post("/google", response_model=GoogleLoginResponse)
+async def google_login(body: GoogleLoginRequest, db: AsyncSession = Depends(get_db)):
+    """Sign in with Google. A first-time student creates a PENDING account and an approval request for PCELL/TPO."""
+    claims = await verify_google_credential(body.credential)
+    email = claims["email"].lower()
+    sub = claims["sub"]
+    name = claims.get("name") or email.split("@")[0]
 
-    if body.role == UserRole.STUDENT and not settings.allow_student_registration:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Student registration with college email is not enabled yet. Use demo accounts from README.",
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+
+    if user is None:
+        if body.details is None:
+            return GoogleLoginResponse(status="DETAILS_REQUIRED", email=email, full_name=name)
+        user = User(
+            email=email,
+            full_name=name,
+            hashed_password=None,
+            google_sub=sub,
+            avatar_url=claims.get("picture"),
+            role=UserRole.STUDENT,
+            status=UserStatus.PENDING,
+        )
+        db.add(user)
+        await db.flush()
+        d = body.details
+        db.add(
+            StudentProfile(
+                user_id=user.id, roll_number=d.roll_number.strip(), course=d.course.strip(), batch=d.batch.strip(), phone=d.phone
+            )
+        )
+        db.add(ApprovalRequest(user_id=user.id, requested_role=UserRole.STUDENT, status=UserStatus.PENDING))
+        return GoogleLoginResponse(
+            status="PENDING", email=email, full_name=name, message="Request sent. You can sign in once PCELL approves it."
         )
 
-    existing = await db.execute(select(User).where(User.email == email))
-    if existing.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Email already registered")
+    if user.google_sub and user.google_sub != sub:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This email is linked to a different Google account")
+    if user.status == UserStatus.PENDING:
+        return GoogleLoginResponse(
+            status="PENDING", email=email, full_name=user.full_name, message="Your request is still waiting for approval."
+        )
+    if user.status == UserStatus.REJECTED:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Your request was rejected. Contact the placement cell.")
+    if user.status != UserStatus.ACTIVE:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is not active")
 
-    status_value = UserStatus.ACTIVE
-    if body.role == UserRole.PCELL_MEMBER:
-        status_value = UserStatus.PENDING
-    elif body.role == UserRole.TPO:
-        raise HTTPException(status_code=403, detail="TPO accounts cannot self-register")
-
-    user = User(
-        email=email,
-        full_name=body.full_name,
-        hashed_password=get_password_hash(body.password),
-        role=body.role,
-        status=status_value,
-    )
-    db.add(user)
-    await db.flush()
-
-    if body.role == UserRole.STUDENT:
-        db.add(StudentProfile(user_id=user.id))
-    if body.role == UserRole.PCELL_MEMBER:
-        db.add(ApprovalRequest(user_id=user.id, requested_role=UserRole.PCELL_MEMBER, status=UserStatus.PENDING))
-
-    return Msg(message="Registration successful")
+    user.google_sub = sub
+    user.avatar_url = claims.get("picture") or user.avatar_url
+    token = create_access_token(str(user.id), {"role": user.role.value})
+    return GoogleLoginResponse(status="OK", access_token=token, role=user.role, full_name=user.full_name, email=email)
 
 
 @router.post("/logout", response_model=Msg)
@@ -98,7 +115,7 @@ async def me(user: User = Depends(get_current_user)):
 
 @router.post("/change-password", response_model=Msg)
 async def change_password(body: ChangePasswordRequest, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if not verify_password(body.current_password, user.hashed_password):
+    if not user.hashed_password or not verify_password(body.current_password, user.hashed_password):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
     user.hashed_password = get_password_hash(body.new_password)
     return Msg(message="Password updated")

@@ -21,6 +21,7 @@ from app.routes.profile import router as profile_router
 from app.routes.questions import router as questions_router, submissions_router
 from app.routes.resume import router as resume_router
 from app.routes.stats import router as stats_router
+from app.routes.student_requests import router as student_requests_router
 from app.routes.tpo import router as tpo_router
 
 
@@ -78,6 +79,7 @@ app.include_router(analytics_router)
 app.include_router(placements_router)
 app.include_router(stats_router)
 app.include_router(tpo_router)
+app.include_router(student_requests_router)
 app.include_router(profile_router)
 app.include_router(misc_router)
 
